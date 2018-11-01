@@ -1,24 +1,26 @@
-import React, { Component } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { Component } from "react";
+import logo from "./logo.svg";
+import "./App.css";
+import Posts from "./Posts";
+import PostsService from "./services/PostsService";
+import WithPolling from "./WithPolling";
+console.log("PostsService", PostsService);
 
 class App extends Component {
+  PostsWithPolling = WithPolling(Posts, PostsService.getPosts, {
+    interval: 3000
+  });
+
   render() {
+    console.log("App render > this", this);
+    var PostsWithPolling = this.PostsWithPolling;
     return (
       <div className="App">
         <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
+          <h1>With Polling</h1>
+          <div className="App-content">
+            <PostsWithPolling {...this.props} />
+          </div>
         </header>
       </div>
     );

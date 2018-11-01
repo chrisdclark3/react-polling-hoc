@@ -1,44 +1,85 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# A Simple Higher Order Component to Add Polling Functionality
 
-## Available Scripts
+## Run
 
-In the project directory, you can run:
+`npm install`
 
-### `npm start`
+`npm start`
 
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Structure
 
-The page will reload if you make edits.<br>
-You will also see any lint errors in the console.
+The application structure is as follows:
 
-### `npm test`
+/src
+- App
 
-Launches the test runner in the interactive watch mode.<br>
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+  /components
+  - Posts
+  - Post
+  - WithPolling
 
-### `npm run build`
+  /services
+  - PostsService
 
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Technical Summary
 
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+- The Wizard component has three sub components: Steps, Content and Actions
+- It takes a single property steps:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```
+interface IWizardProps {
+  steps: IStep[];
+}
+```
 
-### `npm run eject`
+- Steps are made up of "content" and "title":
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+```
+interface IStep {
+  content: JSX.Element;
+  title: string;
+}
+```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- Using this property, the Wizard component defines it's state:
 
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+```
+interface IStepProps extends IStep {
+  isSelected: boolean;
+  id: string;
+  index: number;
+}
+```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+- IStepProps are passed through to Steps, and passed individual to Step components which are rendered in Steps
+- The "content" property of the currently selected step is rendered in Content
+- A reference to the currently selected step (IStepProps), and all steps (IStepProps[]), are passed into Actions; along with a callback for selecting a step:
 
-## Learn More
+```
+interface IActionsProps {
+  currentStep: IStepProps;
+  onSelectStep: (step: IStepProps) => void;
+  steps: IStepProps[];
+}
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- Using buttons labeled Previous and Next, Actions will select a given step, setting it's property isSelected to true, and all other step's isSelected properties to false. This triggers a rerendering of steps and Content, rendering the newly selected step's content.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Design Considerations
+
+- While the component architecture seems complex given the extent of the functionality implemented, I wanted to structure the component so that extending functionality would be easy.
+- Wrapping each Step in a pass through component Steps allows for a seperation of CSS styles, and makes it easier for the developer to expand upon Step related functionality. For example, say there was a need for a vertical layout for steps -- this becomes relatively trivial to implement given the parent wrapper, and the logic related to a vertical layout could live in Steps
+- An arguably simpler approach would be to track the currently selected index, rather then initializing steps as it's own state based collection within wizard. However, as more substantial functionality is added, tracking steps in different states becomes cumbersome:
+  - A step is disabled until a user completes previous steps
+  - A step is enabled but incomplete and a different icon needs to be rendered (a number vs. a completed check mark)
+  - A step is hovered and a tooltip that explains the title needs to be shown
+- Considering possible (and likely) extensions to the initial functionality, it makes sense to consolidate step state management in the properties of the step itself
+
+## Possible Functionality Improvements
+
+- Preserve step selection in local storage so that the selected step is preserved upon navigation
+- Add isEnabled, isComplete flags and callbacks for steps
+- Allow a user to click on enabled steps, instead of just using the action buttons for navigation
+- Add confirm modal for navigating away from a step that is incomplete
+
+\*Note: This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
