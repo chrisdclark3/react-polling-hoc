@@ -10,76 +10,63 @@
 
 The application structure is as follows:
 
-/src
+_/src_
+
 - App
 
-  /components
+  _/components_
+
   - Posts
   - Post
   - WithPolling
 
-  /services
+  _/services_
+
   - PostsService
 
 ## Technical Summary
 
-- The Wizard component has three sub components: Steps, Content and Actions
-- It takes a single property steps:
+- A **PostsService** singleton is imported to App from _/services_
+- In the **App** component's constructor, **PostsWithPolling** is instantiated by calling the Higher Order Component **WithPolling** with the WrappedComponent, a callback function and a configuration object.
 
 ```
-interface IWizardProps {
-  steps: IStep[];
-}
+constructor(props) {
+    super(props)
+    this.PostsWithPolling = WithPolling(Posts, PostsService.getPosts, {
+      interval: 3000
+    });
+  }
 ```
 
-- Steps are made up of "content" and "title":
-
-```
-interface IStep {
-  content: JSX.Element;
-  title: string;
-}
-```
-
-- Using this property, the Wizard component defines it's state:
-
-```
-interface IStepProps extends IStep {
-  isSelected: boolean;
-  id: string;
-  index: number;
-}
-```
-
-- IStepProps are passed through to Steps, and passed individual to Step components which are rendered in Steps
-- The "content" property of the currently selected step is rendered in Content
-- A reference to the currently selected step (IStepProps), and all steps (IStepProps[]), are passed into Actions; along with a callback for selecting a step:
-
-```
-interface IActionsProps {
-  currentStep: IStepProps;
-  onSelectStep: (step: IStepProps) => void;
-  steps: IStepProps[];
-}
-```
-
-- Using buttons labeled Previous and Next, Actions will select a given step, setting it's property isSelected to true, and all other step's isSelected properties to false. This triggers a rerendering of steps and Content, rendering the newly selected step's content.
+- WithPolling is a function that returns a new Component class, extending React.Component.
+- Properties:
+  - _timeout_: tracks the id of a given timeout, created when polling commences
+  - _onPoll_: calls the callback function, passed as the 2nd argument to the **WithPolling** function. When the callback function's promise has resolved, **WithPolling** sets the property _data_ on it's state; setState is passed a callback function that calls _startPolling_, thus establishing the recursion typically utilized for polling.
+  - _startPolling_: calls _stopPolling_, and creates a new timeout with arguments _onPoll_ and the interval (passed as params to WithHolding)
+  - _stopPolling_: clears _timeout_ and is called in the React life cycle method _componentWillUnmount_
+- The new component returns an instance of the WrappedComponent class, having called the callback _componentDidMount_
 
 ## Design Considerations
 
-- While the component architecture seems complex given the extent of the functionality implemented, I wanted to structure the component so that extending functionality would be easy.
-- Wrapping each Step in a pass through component Steps allows for a seperation of CSS styles, and makes it easier for the developer to expand upon Step related functionality. For example, say there was a need for a vertical layout for steps -- this becomes relatively trivial to implement given the parent wrapper, and the logic related to a vertical layout could live in Steps
-- An arguably simpler approach would be to track the currently selected index, rather then initializing steps as it's own state based collection within wizard. However, as more substantial functionality is added, tracking steps in different states becomes cumbersome:
-  - A step is disabled until a user completes previous steps
-  - A step is enabled but incomplete and a different icon needs to be rendered (a number vs. a completed check mark)
-  - A step is hovered and a tooltip that explains the title needs to be shown
-- Considering possible (and likely) extensions to the initial functionality, it makes sense to consolidate step state management in the properties of the step itself
+- Cleaning up _timeout_
+  - While this simple example instantiates a single instance of Posts, suppose we had a bunch of components that were polling for data.
+  - As components were instantiated and destroyed, new timeouts would be set on the window object and potentially never removed. This creates a memory leak, and is a best practice for any observable to garbage collect existing global objects when the component is destroyed
+- _onPoll_ as a seperate function from _startPolling_
+  - typically, a recursive function calls itself. In this example, the recursion is established when a the method _onPoll_ calls _startPolling_
+  - For most cases, polling is established after the function has initially been called; breaking the data transformation and promise resolution logic into a seperate method allows the call to our Service to happen after mounting; after this initial call, recursion is established and polling continues on a set interval.
+- _startPolling_ called after promise resolution
+  - Depending on your infrastructure constraints, the "cost" of the callback method, and the desired behavior of your web application this may or may not be ideal
+  - Suppose the server takes longer then your interval to resolve this request, given your application's traffic and devoted resources. If the callback hasn't resolved, and we've triggered another call to the server for this data, we would be queing up calls for the same information (albeit some more recent then others).
+  - The downside to establishing this recursion at promise resolution is that the true interval at which our callback is called is actually _interval passed as params_ _+_ _the trip time of our callback_
+- _params_ argument
+  - Why pass a params argument to the higher order component instead of a property from props? Depending on the size of your application, props can be very bloated. Say our App has pagination, supported in our API as a query parameter (i.e. www.example.com/api/posts?page=1). if the application takes a query param from our router, reflecting the current page, and sets a local state variable named currentPage to reflect this value... Needless to say, it's easy to imagine a situation where you have conflicting variable declarations. Passing in a params argument when polling is instantiated clearly seperates the definition of request parameters from application/page/parent component variables.
 
 ## Possible Functionality Improvements
 
-- Preserve step selection in local storage so that the selected step is preserved upon navigation
-- Add isEnabled, isComplete flags and callbacks for steps
-- Allow a user to click on enabled steps, instead of just using the action buttons for navigation
-- Add confirm modal for navigating away from a step that is incomplete
+- Add a boolean parameter that, when present, establishs recursion in the timeout's callback, and cancels outstanding promises
+- Add a higher order component **WithLoading** that displays an application spinner for unresolved data
+- Conditionally render the WrappedComponent, based on whether data from our API has resolved.
+- Add comments / document methods
+- Allow for params (used in the callback) to be passed as props
 
 \*Note: This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).

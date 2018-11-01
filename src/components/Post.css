@@ -1,8 +1,32 @@
 .Post {
   border: 1px solid black;
-  padding: 1rem;
-  padding-left: 3rem;
-  text-align: left;
-  width: 300px;
+  display: block;
+  position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0.2rem;
   margin: 1rem;
+  text-align: left;
+  width: 15vmax;
+  height: 15vmax;
 }
+
+.Post-title {
+  margin-bottom: 0.5rem;
+  text-transform: capitalize;
+}
+
+.Post-body {
+  padding: 1rem;
+}
+
+.Post-id {
+  color: var(--color-grey-light);
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  font-size: 8rem;
+  z-index: -1;
+}
+
+

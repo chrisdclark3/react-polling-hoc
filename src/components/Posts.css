@@ -3,7 +3,13 @@
   flex-direction: column;
 }
 
-.Posts .body {
+.Posts-title {
+  font-size: 5rem;
+  align-self: flex-start;
+}
+
+.Posts-body {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-start;
 }

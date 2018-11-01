@@ -5,9 +5,9 @@ class Post extends Component {
   render() {
     return (
       <div className={"Post"}>
-        <h1>{this.props.id}</h1>
-        <h3>{this.props.title}</h3>
-        <p>{this.props.body}</p>
+        <h1 className={"Post-id"}>{this.props.id}</h1>
+        <h3 className={"Post-title"}>{this.props.title}</h3>
+        <p className={"Post-body"}>{this.props.body}</p>
       </div>
     );
   }

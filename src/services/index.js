@@ -1,5 +1,5 @@
 import PostsService from './PostsService'
 
-export default {
+export {
   PostsService
 }

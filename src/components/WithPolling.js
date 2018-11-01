@@ -2,11 +2,10 @@ import React from "react";
 
 function WithPolling(WrappedComponent, callback, params) {
   return class extends React.Component {
-    
     constructor(props) {
       super(props);
+
       this.timeout = null;
-      this.date = null;
       this.startPolling = this.startPolling.bind(this);
       this.stopPolling = this.stopPolling.bind(this);
       this.onPoll = this.onPoll.bind(this);
@@ -20,33 +19,36 @@ function WithPolling(WrappedComponent, callback, params) {
       callback(params)
         .then(response => response.json())
         .then(json => {
-          this.setState({
+          this.setState(
+            {
               data: json
-          }, () => {
-              clearTimeout(this.timeout);
+            },
+            () => {
               this.startPolling();
-            });
+            }
+          );
         });
     }
 
     startPolling() {
-      this.date = Date.now();
+      this.stopPolling();
+      // Note: onPoll calls this.startPolling, establishing recursion
       this.timeout = setTimeout(this.onPoll, params.interval);
     }
 
     stopPolling() {
-      if (timeout) {
-        clearTimeout(timeout);
-        timeout = null;
+      if (this.timeout) {
+        clearTimeout(this.timeout);
+        this.timeout = null;
       }
     }
 
     componentDidMount() {
-      this.startPolling();
+      this.onPoll();
     }
 
     componentWillUnmount() {
-      this.stopPolling()
+      this.stopPolling();
     }
 
     render() {
